@@ -3,6 +3,7 @@ module jira-get-tickets
 go 1.24.6
 
 require (
+	github.com/joho/godotenv v1.5.1 // indirect
 	github.com/richardlehane/mscfb v1.0.4 // indirect
 	github.com/richardlehane/msoleps v1.0.4 // indirect
 	github.com/tiendc/go-deepcopy v1.6.0 // indirect
