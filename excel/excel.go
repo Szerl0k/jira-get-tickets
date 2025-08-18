@@ -4,13 +4,17 @@ import (
 	"github.com/xuri/excelize/v2"
 	"jira-get-tickets/structs"
 	"log"
+	"os"
+	"path/filepath"
 	"strconv"
 	"time"
 )
 
 const sheetName = "tickets"
 
-func ConvertToExcel(data *structs.TicketsData) error {
+const firstRowForData = 5
+
+func ExportTicketsToExcel(data *structs.TicketsData) error {
 	f := excelize.NewFile()
 
 	f.NewSheet(sheetName)
@@ -26,13 +30,13 @@ func ConvertToExcel(data *structs.TicketsData) error {
 		log.Fatalf(err.Error())
 	}
 
-	if err := f.SaveAs(GetSpreadsheetName()); err != nil {
+	if err := f.SaveAs(SpreadsheetFilePath()); err != nil {
 		return err
 	}
 	return nil
 }
 
-func setGeneralStyle(f *excelize.File, i int) error {
+func setGeneralStyle(f *excelize.File, ticketsCount int) error {
 	blueStyle, err := f.NewStyle(&excelize.Style{
 		Alignment: &excelize.Alignment{
 			Horizontal: "center",
@@ -65,9 +69,10 @@ func setGeneralStyle(f *excelize.File, i int) error {
 		return err
 	}
 
-	for row := 0; row <= i+1; row++ {
+	// Set style from headers to the last ticket (ignore first rows like: "generated" or "tickets count")
+	for row := firstRowForData - 1; row <= firstRowForData+ticketsCount; row++ {
 
-		if row%2 == 0 {
+		if row%2 != 0 {
 			f.SetRowStyle(sheetName, row, row, whiteStyle)
 		} else {
 			f.SetRowStyle(sheetName, row, row, blueStyle)
@@ -79,31 +84,34 @@ func setGeneralStyle(f *excelize.File, i int) error {
 	f.SetColWidth(sheetName, "G", "I", 20)
 	f.SetColWidth(sheetName, "I", "J", 34)
 
-	f.SetRowHeight(sheetName, 2, 100)
-	f.SetRowHeight(sheetName, 3, 100)
+	/*f.SetRowHeight(sheetName, 2, 100)
+	f.SetRowHeight(sheetName, 3, 100)*/
 
 	return nil
 }
 
 func fillData(f *excelize.File, data *structs.TicketsData) error {
 
+	now := time.Now().Format("2006-01-02 15:04:05")
+
+	f.SetCellValue(sheetName, "A1", "Generated on:")
+	f.SetCellValue(sheetName, "B1", now)
+	f.SetCellValue(sheetName, "A2", "Tickets count")
+	f.SetCellValue(sheetName, "B2", data.Total)
+
 	//columns := 8
 	rows := data.Total
 
-	f.SetCellValue(sheetName, "A1", "Key")
-	f.SetCellValue(sheetName, "B1", "Issue Type")
-	f.SetCellValue(sheetName, "C1", "Priority")
-	f.SetCellValue(sheetName, "D1", "Severity")
-	f.SetCellValue(sheetName, "E1", "Component")
-	f.SetCellValue(sheetName, "F1", "Summary")
-	f.SetCellValue(sheetName, "G1", "Assignee")
-	f.SetCellValue(sheetName, "H1", "Status")
-	f.SetCellValue(sheetName, "I1", "Created")
-	f.SetCellValue(sheetName, "J1", "Updated")
+	headers := []string{"Key", "Issue Type", "Priority", "Severity", "Component", "Summary", "Assignee", "Status", "Created", "Updated"}
+
+	for col, h := range headers {
+		cell, _ := excelize.CoordinatesToCellName(col+1, 4)
+		f.SetCellValue(sheetName, cell, h)
+	}
 
 	for i := 0; i < rows; i++ {
 
-		istr := strconv.Itoa(i + 2)
+		istr := strconv.Itoa(i + firstRowForData)
 
 		f.SetCellValue(sheetName, "A"+istr, data.Issues[i].Key)
 		f.SetCellValue(sheetName, "B"+istr, data.Issues[i].Fields.Issuetype.Name)
@@ -122,6 +130,18 @@ func fillData(f *excelize.File, data *structs.TicketsData) error {
 
 }
 
-func GetSpreadsheetName() string {
-	return "Tickets " + time.Now().Format("2006-01-02") + ".xlsx"
+func SpreadsheetFilePath() string {
+
+	dir := "Spreadsheets"
+
+	if _, err := os.Stat(dir); os.IsNotExist(err) {
+		err := os.Mkdir(dir, os.ModePerm)
+		if err != nil {
+			log.Fatalf("Failed to create Spreadsheets directory: %v", err)
+		}
+	}
+
+	filename := "Tickets " + time.Now().Format("2006-01-02") + ".xlsx"
+
+	return filepath.Join(dir, filename)
 }

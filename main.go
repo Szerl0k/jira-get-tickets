@@ -17,6 +17,10 @@ func main() {
 
 	responseData, err := sendHttpRequest(uri)
 
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	var tickets structs.TicketsData
 
 	err = json.Unmarshal(responseData, &tickets)
@@ -25,7 +29,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	if err = excel.ConvertToExcel(&tickets); err != nil {
+	if err = excel.ExportTicketsToExcel(&tickets); err != nil {
 		log.Fatal(err)
 	}
 }
