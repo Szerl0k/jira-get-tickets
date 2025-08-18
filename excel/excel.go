@@ -70,7 +70,7 @@ func setGeneralStyle(f *excelize.File, ticketsCount int) error {
 	}
 
 	// Set style from headers to the last ticket (ignore first rows like: "generated" or "tickets count")
-	for row := firstRowForData - 1; row <= firstRowForData+ticketsCount; row++ {
+	for row := firstRowForData - 1; row < firstRowForData+ticketsCount; row++ {
 
 		if row%2 != 0 {
 			f.SetRowStyle(sheetName, row, row, whiteStyle)
