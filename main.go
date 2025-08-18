@@ -13,7 +13,13 @@ import (
 
 func main() {
 
-	uri := "https://jira.atlassian.com/rest/api/latest/search?jql=project%20=%20JRASERVER%20AND%20status%20=%20%22In%20Progress%22%20AND%20component%20in%20(Accessibility,%20%22Administration%20-%20S3%20Object%20Storage%22,%20%22Environment%20-%20Database%22)"
+	err := godotenv.Load(".env")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	uri := os.Getenv("JIRA_URI")
 
 	responseData, err := sendHttpRequest(uri)
 
