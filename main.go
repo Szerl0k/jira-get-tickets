@@ -10,6 +10,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"strings"
 )
 
 func main() {
@@ -25,6 +26,7 @@ func main() {
 	responseData, err := sendHttpRequest(uri)
 
 	if err != nil {
+		logToFile(err.Error())
 		log.Fatal(err)
 	}
 
@@ -63,6 +65,11 @@ func sendHttpRequest(uri string) ([]byte, error) {
 	resp, err := client.Do(req)
 
 	if err != nil {
+
+		if err == io.EOF || strings.Contains(err.Error(), "EOF") {
+			return nil, fmt.Errorf("EOF error: server closed connection unexpectedly")
+		}
+
 		return nil, err
 	}
 	defer resp.Body.Close()
@@ -82,4 +89,15 @@ func sendHttpRequest(uri string) ([]byte, error) {
 	}
 
 	return responseData, nil
+}
+
+func logToFile(message string) {
+	f, err := os.OpenFile("error.log", os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
+	if err != nil {
+		log.Fatalf("Failed to open log file: %v", err)
+	}
+	defer f.Close()
+
+	logger := log.New(f, "", log.LstdFlags)
+	logger.Println(message)
 }
