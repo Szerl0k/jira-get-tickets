@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/joho/godotenv"
 	"io"
 	"jira-get-tickets/excel"
@@ -65,6 +66,14 @@ func sendHttpRequest(uri string) ([]byte, error) {
 		return nil, err
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode == http.StatusRequestTimeout || resp.StatusCode == http.StatusGatewayTimeout {
+		return nil, fmt.Errorf("server responded with timeout: %d, %s", resp.StatusCode, resp.Status)
+	}
+
+	if resp.StatusCode >= 500 {
+		return nil, fmt.Errorf("server error: %d, %s", resp.StatusCode, resp.Status)
+	}
 
 	responseData, err := io.ReadAll(resp.Body)
 
